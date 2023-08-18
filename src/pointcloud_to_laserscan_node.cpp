@@ -75,7 +75,7 @@ PointCloudToLaserScanNode::PointCloudToLaserScanNode(const rclcpp::NodeOptions &
   inf_epsilon_ = this->declare_parameter("inf_epsilon", 1.0);
   use_inf_ = this->declare_parameter("use_inf", true);
 
-  pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("scan", rclcpp::SensorDataQoS());
+  pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("scan",10);
 
   using std::placeholders::_1;
   // if pointcloud target frame specified, we need to filter by transform availability
@@ -118,9 +118,9 @@ void PointCloudToLaserScanNode::subscriptionListenerThreadLoop()
         RCLCPP_INFO(
           this->get_logger(),
           "Got a subscriber to laserscan, starting pointcloud subscriber");
-        rclcpp::SensorDataQoS qos;
-        qos.keep_last(input_queue_size_);
-        sub_.subscribe(this, "cloud_in", qos.get_rmw_qos_profile());
+        // rclcpp::SensorDataQoS qos;
+        // qos.keep_last(input_queue_size_);
+        sub_.subscribe(this,"cloud_in");
       }
     } else if (sub_.getSubscriber()) {
       RCLCPP_INFO(
@@ -139,7 +139,7 @@ void PointCloudToLaserScanNode::cloudCallback(
 {
   // build laserscan output
   auto scan_msg = std::make_unique<sensor_msgs::msg::LaserScan>();
-  scan_msg->header = cloud_msg->header;
+  scan_msg->header.stamp = this->get_clock()->now();
   if (!target_frame_.empty()) {
     scan_msg->header.frame_id = target_frame_;
   }
